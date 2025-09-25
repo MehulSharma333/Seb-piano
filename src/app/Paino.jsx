@@ -607,12 +607,14 @@ function fullScreenPiano() {
   }
   
     // 2. Map each sound path to a new Promise
-    const loadingPromises = allSoundPaths.map(path => {
+     const loadingPromises = allSoundPaths.map(path => {
       return new Promise(resolve => {
         const audio = new Audio(path);
-        // The promise resolves when the 'canplaythrough' event fires
-        audio.addEventListener('canplaythrough', resolve, { once: true });
-        // The browser will start downloading the audio as soon as the object is created
+        audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+        audio.addEventListener('error', () => {
+          console.warn(`Failed to load: ${path}`);
+          resolve(); // Resolve anyway to prevent Promise.all from failing
+        }, { once: true });
       });
     });
 
