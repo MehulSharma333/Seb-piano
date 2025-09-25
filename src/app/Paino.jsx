@@ -590,11 +590,22 @@ function fullScreenPiano() {
 }
 
  useEffect(() => {
-    // 1. Consolidate all sound paths from both arrays
-     const allSoundPaths = [
-    ...whiteKeys.flatMap(key => Object.values(key).filter(val => typeof val === 'string' && val.endsWith('.wav'))),
-    ...blackKeys.flatMap(key => key ? Object.values(key).filter(val => typeof val === 'string' && val.endsWith('.wav')) : [])
-  ];
+  const allSoundPaths = [
+  ...whiteKeys.flatMap(key => {
+    // Check if the 'sound1' key exists and is a string
+    if (typeof key.sound1 === 'string' && key.sound1.endsWith('.wav')) {
+      return key.sound1;
+    }
+    return []; // Return an empty array if the sound isn't found
+  }),
+  ...blackKeys.flatMap(key => {
+    // Handle the case where the key might be null
+    if (key && typeof key.sound1 === 'string' && key.sound1.endsWith('.wav')) {
+      return key.sound1;
+    }
+    return [];
+  })
+];
 
   // Log the array to the console to check its contents
   console.log('All Sound Paths:', allSoundPaths);
