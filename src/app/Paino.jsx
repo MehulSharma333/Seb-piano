@@ -588,7 +588,8 @@ useEffect(() => {
 function fullScreenPiano() {
   setFullScreen(true)
 }
-   useEffect(() => {
+
+ useEffect(() => {
     // 1. Consolidate all sound paths from both arrays
      const allSoundPaths = [
     ...whiteKeys.flatMap(key => Object.values(key).filter(val => typeof val === 'string' && val.endsWith('.wav'))),
@@ -605,7 +606,6 @@ function fullScreenPiano() {
     setIsLoaded(true); 
     return;
   }
-  
   const loadingPromises = allSoundPaths.map(path => {
   return new Promise(resolve => {
     const audio = new Audio(path);
@@ -656,12 +656,13 @@ Promise.all(loadingPromises)
           <Loader2 className="h-16 w-16 text-teal-400" />
         </motion.div>
         <p className="font-sans text-xl font-medium tracking-wide text-zinc-400 sm:text-2xl">
-          Loading Piano Sounds...
+          Loading Tabla Sounds...
         </p>
       </motion.div>
     </div>
   );
   }
+
   return (
     <main className={`w-full h-[100svh] md:h-[100dvh]  relative ${fullScreen ? "overflow-hidden" : ""}     flex flex-col   justify-center items-center  `}>
      <div ref={pianoRef} className={` ${theme.keyColor} ${fullScreen ? "rotate-piano " : ""} rounded-xl w-[95%] max-w-[1600px] max-h-[1000px]  2xl:w-5/6 h-[30%] xl:h-5/6 md:h-2/4 shadow-2xl  flex flex-col overflow-hidden  `}>
