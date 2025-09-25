@@ -1,0 +1,63 @@
+body {
+-ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+scrollbar-width: none;
+}
+
+@media (max-wid) {
+    
+}
+
+
+
+.piano-container{
+    -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+    scrollbar-width: none;
+}
+
+.background-image{
+    background: url(/maroon.jpg);
+    object-fit: fill ;
+   
+}
+.white-decor{
+    background: url(/White-image.jpg);
+    object-fit: fill;
+}
+.blue-decor{
+    background: url(/Blue-image.jpg);
+    object-fit: fill;
+}
+.scale-in {
+    animation: scaleIn 0.2s linear forwards;
+    transform-origin: top;
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(1); /* 100% size */
+    }
+    100% {
+        transform: scale(0.99); /* 95% size */
+    }
+}
+.active {
+    background-color: #3b82f6;
+}
+
+@media(max-width:640px) {
+      body.locked, html.locked {
+    overflow: hidden;
+    height: 100svh;
+    width: 100svw;  
+    margin: 0;
+    padding: 0;
+  }
+    .rotate-piano{
+        transform: rotate(90deg);
+        transform-origin: center ; 
+        transition: transform 1s ease;
+        width: 100svh;
+        height: 100svw;
+       border-radius: 0%;
+    }
+}

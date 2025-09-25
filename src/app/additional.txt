@@ -1,0 +1,4 @@
+  {<Select selectorIcon={<ResponsiveSelectorIcon/>} isDisabled={disableSelect}  onChange={(e) => {console.log(e.target.value); setSelectedSound(e.target.value)}} value={selectedSound} defaultSelectedKeys={["sound1"]}  className='w-full h-full' classNames={{trigger: `bg-black w-full  data-[hover=true]:bg-black text-white ${fullScreen ? "text-[12px]" : "text-[6px]"}  md:text-base h-full`, label :"text-white pb-8  md:pb-12",base:"h-full w-full ",mainWrapper: "h-full w-full ", listboxWrapper: `bg-black text-[4px] md:text-xl text-white rounded-xl ${fullScreen ? "fixed -top-40 -left-28 rotate-90 w-[180px] h-[80px]" : "w-[80px]"}  md:w-full p-2 md:p-0   `,  value : "text-[4px] md:text-xl md:pt-6 w-full "}} color='#1e293b' label="Select Tone">
+        <SelectItem key="sound1" value="sound">Grand Piano</SelectItem>
+        <SelectItem key="sound2" value="sound1">Rhodes</SelectItem>
+        </Select>}
