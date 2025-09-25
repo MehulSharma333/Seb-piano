@@ -606,29 +606,33 @@ function fullScreenPiano() {
     return;
   }
   
-    // 2. Map each sound path to a new Promise
-     const loadingPromises = allSoundPaths.map(path => {
-      return new Promise(resolve => {
-        const audio = new Audio(path);
-        audio.addEventListener('canplaythrough', () => resolve(), { once: true });
-        audio.addEventListener('error', () => {
-          console.warn(`Failed to load: ${path}`);
-          resolve(); // Resolve anyway to prevent Promise.all from failing
-        }, { once: true });
-      });
-    });
+  const loadingPromises = allSoundPaths.map(path => {
+  return new Promise(resolve => {
+    const audio = new Audio(path);
+    audio.addEventListener('canplaythrough', () => {
+      resolve({ path, status: 'loaded' });
+    }, { once: true });
 
-    // 3. Use Promise.all to wait for all promises to resolve
-    Promise.all(loadingPromises)
-      .then(() => {
-        // This block runs only after ALL sounds have loaded
-        setIsLoaded(true);
-        console.log('All piano sounds loaded successfully! ✅');
-      })
-      .catch(error => {
-        // Handle any errors that might occur during loading
-        console.error('An error occurred while loading sounds:', error);
-      });
+    // Handle error case: The browser couldn't load the file
+    audio.addEventListener('error', () => {
+      console.warn(`Failed to load sound file: ${path}`);
+      resolve({ path, status: 'error' }); // Resolve the promise so Promise.all doesn't fail
+    }, { once: true });
+  });
+});
+
+Promise.all(loadingPromises)
+  .then(results => {
+    // You can now check the status of each file if needed
+    const successfulLoads = results.filter(r => r.status === 'loaded');
+    console.log(`${successfulLoads.length} out of ${results.length} sounds loaded successfully.`);
+    setIsLoaded(true);
+  })
+  .catch(error => {
+    // This catch block would only run if something fundamentally goes wrong with Promise.all itself
+    console.error('An unhandled error occurred:', error);
+  });
+   
   }, []);
     // This part is the same as before, but it uses the new consolidated array
     
@@ -652,7 +656,7 @@ function fullScreenPiano() {
           <Loader2 className="h-16 w-16 text-teal-400" />
         </motion.div>
         <p className="font-sans text-xl font-medium tracking-wide text-zinc-400 sm:text-2xl">
-          Loading Tabla Sounds...
+          Loading Piano Sounds...
         </p>
       </motion.div>
     </div>
