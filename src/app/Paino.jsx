@@ -1,13 +1,14 @@
 "use client";
-import React from 'react';
+import React, { act } from 'react';
 import { useRef, useState, useEffect } from 'react';
 import './index.css';
 import {Select, SelectItem} from "@heroui/react";
 import {ChevronDownIcon} from '@heroicons/react/24/solid';
 import { Tooltip  } from '@heroui/react';
 import { CircleX , Menu ,  Loader2 } from 'lucide-react';
-import { motion } from "motion/react";
+import { motion , AnimatePresence } from "motion/react";
 import ToneDropdown from './ToneDropDown';
+import { LoaderOverlay } from './LoaderOverlay';
 
 const Paino = () => {
   const [activeKey, setActiveKey] = useState([]);
@@ -40,6 +41,8 @@ const audioRefTwo = useRef();
  const [fullScreen , setFullScreen] = useState(false);
  const [isLoaded, setIsLoaded] = useState(false);
  const pianoRef = useRef(null);
+ const [isSoundPackLoading, setIsSoundPackLoading] = useState(false);
+ const [loadedSoundPacks, setLoadedSoundPacks] = useState(new Set());
   const themes = [
     {
       name: "Classic",
@@ -264,6 +267,7 @@ const playSoundTwo = (blackKey, index , label ) => {
   
 }
 const startRecording = () => {
+  setIsMetroPlaying(false)
   setActivateTimerForRecording(true);
   setRecordedNotes([]);
   setIsRecording(true);
@@ -272,6 +276,7 @@ const startRecording = () => {
   setStartTime(start);
 };
 const stopRecording = () => {
+  setIsMetroPlaying(false)
   setIsRecording(false);
   setDisableSelect(false)
   setActivateTimer(false);
@@ -353,6 +358,7 @@ const playRecording = () => {
   if (!recordedNotes || recordedNotes.length === 0) return;
   setDisableSelect(true);
   setActivateTimer(true); // Start the timer
+  setIsMetroPlaying(false)
   const firstNoteTime = recordedNotes[0].timestamp;
   const recStart = startTime;
   console.log("start value", recStart);
@@ -411,7 +417,7 @@ const playRecording = () => {
 };
 
 function metroShow() {
-  if (activateTimer) return ;
+  if (activateTimer || activateTimerForRecording) return;
   const newState = !isMetroPlaying;
   setIsMetroPlaying(newState);
   if (newState) {
@@ -422,7 +428,9 @@ function metroShow() {
     currentBeatRef.current = 1;
   }
 }
+
 function tick() {
+   if (activateTimer || activateTimerForRecording) return;
   const firstRef = audioRef;
   const secondRef = audioRefTwo;
   if (barLength > 1 && currentBeatRef.current === barLength) {
@@ -446,10 +454,12 @@ function metroLoop() {
 setIntervalId(newIntervalId)}
 useEffect(() => {
    if (isMetroPlaying) {
-     metroLoop();
-   } 
+    metroLoop();
+  } else {
+    clearInterval(intervalId);
+  }
    return ()=> clearInterval(intervalId);
-}, [bpm , audioRef , audioRefTwo]);
+}, [bpm , audioRef , audioRefTwo , isMetroPlaying]);
 function prevClick() {
   // Pause the audio
   if (audioRef.current) {
@@ -488,7 +498,7 @@ function forwardClick() {
   setBpm((prevBpm) => Math.min(prevBpm + 1, 180));
 }
 function handleSustain() {
-  if (activateTimer || activateTimerForRecording) return ;
+ 
   setSustainNotes((prev) => !prev)
   setSelectedSound((prevSound) => (prevSound === "sound1" || prevSound === "sound2" || prevSound === "sound3" || prevSound === "sound4" ? "sustain" : "sound1"));
 }
@@ -589,6 +599,48 @@ function fullScreenPiano() {
   setFullScreen(true)
 }
 
+const loadSoundPack = async (soundKey) => {
+  // Check if this sound pack has already been loaded
+  if (loadedSoundPacks.has(soundKey)) {
+    console.log(`Sound pack '${soundKey}' is already loaded. No need to load again.`);
+    return; // Exit the function early
+  }
+
+  setIsSoundPackLoading(true);
+
+ 
+
+  // Logic to get allPackPaths
+  const allPackPaths = [
+    ...whiteKeys.flatMap(key => key[soundKey]),
+    ...blackKeys.flatMap(key => key ? key[soundKey] : []),
+  ];
+
+  const loadingPromises = allPackPaths.map(path => {
+    return new Promise(resolve => {
+      const audio = new Audio(path);
+      audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+      audio.addEventListener('error', () => {
+        console.warn(`Failed to load: ${path}`);
+        resolve();
+      }, { once: true });
+    });
+  });
+
+  try {
+    await Promise.all(loadingPromises);
+    console.log(`Sound pack '${soundKey}' is ready to play.`);
+
+    // Add the soundKey to the Set of loaded sound packs
+    setLoadedSoundPacks(prevSet => new Set(prevSet.add(soundKey)));
+
+  } catch (error) {
+    console.error('Error loading sound pack:', error);
+  } finally {
+    setIsSoundPackLoading(false);
+  }
+};
+
  useEffect(() => {
   const allSoundPaths = [
   ...whiteKeys.flatMap(key => {
@@ -638,6 +690,7 @@ Promise.all(loadingPromises)
     const successfulLoads = results.filter(r => r.status === 'loaded');
     console.log(`${successfulLoads.length} out of ${results.length} sounds loaded successfully.`);
     setIsLoaded(true);
+     setLoadedSoundPacks(prevSet => new Set(prevSet.add('sound1')));
   })
   .catch(error => {
     // This catch block would only run if something fundamentally goes wrong with Promise.all itself
@@ -649,33 +702,19 @@ Promise.all(loadingPromises)
     
    if (!isLoaded) {
      return (
-    <div className="flex h-screen w-full items-center justify-center  text-white transition-opacity duration-700">
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        className="flex flex-col items-center space-y-4"
-      >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{
-            repeat: Infinity,
-            duration: 1.5,
-            ease: "linear",
-          }}
-        >
-          <Loader2 className="h-16 w-16 text-teal-400" />
-        </motion.div>
-        <p className="font-sans text-xl font-medium tracking-wide text-zinc-400 sm:text-2xl">
-          Loading Tabla Sounds...
-        </p>
-      </motion.div>
-    </div>
+   <LoaderOverlay/>
   );
   }
 
   return (
     <main className={`w-full h-[100svh] md:h-[100dvh]  relative ${fullScreen ? "overflow-hidden" : ""}     flex flex-col   justify-center items-center  `}>
+        <AnimatePresence>
+      {/* The loader renders only if isSoundPackLoading is true */}
+      {isSoundPackLoading && (
+        <LoaderOverlay isLoaded={isLoaded} fullScreen={fullScreen} /> // Use a dedicated component for the loader
+      )}
+    </AnimatePresence>
+
      <div ref={pianoRef} className={` ${theme.keyColor} ${fullScreen ? "rotate-piano " : ""} rounded-xl w-[95%] max-w-[1600px] max-h-[1000px]  2xl:w-5/6 h-[30%] xl:h-5/6 md:h-2/4 shadow-2xl  flex flex-col overflow-hidden  `}>
      <div className='h-[40%] w-full flex'>
         <div className='w-1/3 flex pl-1 gap-1 md:gap-0 '>
@@ -705,12 +744,12 @@ Promise.all(loadingPromises)
        </Tooltip>
         </div>
         <div className='w-1/2  flex flex-col md:p-2 lg:p-4 md:gap-2 py-2 md:py-2 gap-1'>
-           <ToneDropdown setSustainNotes={setSustainNotes} disableSelect={disableSelect} selectedSound={selectedSound} setSelectedSound={setSelectedSound} fullScreen={fullScreen} />
+           <ToneDropdown setSustainNotes={setSustainNotes} disableSelect={disableSelect} selectedSound={selectedSound} setSelectedSound={setSelectedSound} fullScreen={fullScreen} loadSoundPack={loadSoundPack} />
 
               <Tooltip showArrow content="Sustain The Keys Longer :)"  classNames={{
     base: "bg-purple-500 text-white",
   }} placement='bottom'>
-              <button onClick={handleSustain} className={`h-1/2 w-full bg-gray-800 transition-all duration-500 ease-in-out ${theme.name === "Snow White" ? "" :" bg-opacity-70"} ${sustainNotes ? "scale-90 bg-green-500" : "scale-100"} rounded-xl text-center text-white flex justify-center items-center`}>
+              <button  disabled={disableSelect}   onClick={handleSustain} className={`h-1/2 w-full bg-gray-800 transition-all duration-500 ease-in-out ${theme.name === "Snow White" ? "" :" bg-opacity-70"} ${sustainNotes && !disableSelect ? "scale-90 bg-green-500" : "scale-100"} rounded-xl text-center text-white flex justify-center items-center`}>
               <h1 className={`lg:text-xl ${fullScreen ? "text-[10px]" : "text-[6px] md:text-sm"} `}>Sustain</h1>
               </button>
               </Tooltip>
@@ -718,9 +757,9 @@ Promise.all(loadingPromises)
         </div>
         <div className='w-1/3 shadow-2xl md:p-6 p-2 '>
         <div className='bg-black h-full w-full flex justify-center items-center select-none'>
-          <h1 className='text-white md:text-2xl'>{activateTimer ? formatTime(timeLeft) : activateTimerForRecording ? formatTime(timeWhileRecording) : ""}</h1>
+          <h1 className='text-white md:text-2xl'>{activateTimer ? "...playing" : activateTimerForRecording ? formatTime(timeWhileRecording) : ""}</h1>
           <h1 className='text-white text-[8px] md:text-2xl'>{!activateTimer && !activateTimerForRecording && !isMetroPlaying && screenDisplay}</h1>
-        {!activateTimerForRecording && isMetroPlaying && <div className='w-full h-full flex flex-col justify-center items-center '>
+        {!activateTimerForRecording && !activateTimer && isMetroPlaying && <div className='w-full h-full flex flex-col justify-center items-center '>
           <div className='flex justify-center items-center w-full h-full gap-4  md:gap-8'>
             <button onClick={forwardClick} className='w-[20px] h-[20px] md:w-[45px] md:h-[45px] shadow-xl p-1 md:p-2 flex justify-center bg-slate-500 bg-opacity-80 rounded-md md:rounded-xl items-center'><h1 className='font-bold text-base md:text-4xl '>+</h1> </button>
           <h1 className='text-white text-center text-lg  md:text-5xl '>{bpm}</h1>

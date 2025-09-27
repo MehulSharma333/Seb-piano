@@ -7,7 +7,8 @@ export default function ToneDropdown({
   selectedSound,
   setSelectedSound,
   fullScreen,
-  setSustainNotes
+  setSustainNotes ,
+  loadSoundPack
 }) {
   
   const [open, setOpen] = useState(false);
@@ -25,6 +26,11 @@ export default function ToneDropdown({
   setSustainNotes(false);
  }
 
+ function handleSoundSelect(soundKey){
+   loadSoundPack(soundKey);
+   setSelectedSound(soundKey);
+   setOpen(false);
+ }
 
   return (
     <div className="h-1/2 w-full rounded-lg md:rounded-xl  flex">
@@ -63,10 +69,8 @@ export default function ToneDropdown({
               {tones.map((tone) => (
                 <div
                   key={tone.key}
-                  onClick={() => {
-                    setSelectedSound(tone.key);
-                    setOpen(false);
-                  }}
+                  onClick={() => handleSoundSelect(tone.key)}
+                   
                   className={`md:px-4 px-2 py-2 cursor-pointer text-xs md:text-sm transition-colors duration-200 text-white 
                     ${selectedSound === tone.key ? "bg-gray-800" : "hover:bg-gray-700"}
                     
